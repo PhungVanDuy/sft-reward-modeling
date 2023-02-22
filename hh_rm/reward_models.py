@@ -41,7 +41,6 @@ class RewardModel(nn.Module):
         mc_token_ids=None,
         lm_labels=None,
         mc_labels=None,
-        labels=None,
         return_dict=False,
         output_attentions=False,
         output_hidden_states=False,

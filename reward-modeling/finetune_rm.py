@@ -14,7 +14,7 @@ import random
 
 
 class SparsePairwiseTrainer(Trainer):
-    def compute_loss(self, model, inputs, return_outputs=False):
+    def compute_loss(self, model, inputs, labels=None, return_outputs=False):
         # forward pass
         assert len(inputs["input_ids"].shape) == 2
         bs = inputs["input_ids"].shape[0] // 2
@@ -26,7 +26,7 @@ class SparsePairwiseTrainer(Trainer):
 
 
 class RankedTrainer(Trainer):
-    def compute_loss(self, model, inputs, return_outputs=False):
+    def compute_loss(self, model, inputs, labels=None, return_outputs=False):
         # Batch ordered most to least preferable
         rewards = model(**inputs)
         loss = 0
@@ -70,7 +70,7 @@ def train(config):
     PAD_ID = tokenizer(tokenizer.pad_token)["input_ids"][0]
     model.PAD_ID = PAD_ID
     model.config.pad_token_id = model.config.eos_token_id
-    max_length = 1024
+    max_length = 550
 
     data = load_dataset(config["data_path"])
     train_data = data["train"]
@@ -80,7 +80,7 @@ def train(config):
         split = data["train"].train_test_split(test_size=0.05)
         train_data = split["train"]
         eval_data = split["test"]
-    
+
     if config["trainer_type"] == "ranked":
         order = config["order"]
         train_dataset = RankedDataset(train_data, tokenizer, max_length=max_length, order=order, max_num=config["max_train_size"])
@@ -94,14 +94,14 @@ def train(config):
         trainer = SparsePairwiseTrainer(model=model, args=training_args, train_dataset=train_dataset, compute_metrics=compute_metrics,
              eval_dataset=eval_dataset, data_collator=pairwise_data_collator)
     elif config["trainer_type"] == "dense":
-        trainer = DensePairwiseTrainer(model=model, args=training_args, train_dataset=train_dataset,
+        trainer = DensePairwiseTrainer(model=model, args=training_args, train_dataset=train_dataset, compute_metrics=compute_metrics,
             data_collator=pairwise_data_collator)
     elif config["trainer_type"] == "ranked":
         trainer = RankedTrainer(model=model, args=training_args, train_dataset=train_dataset, data_collator=ranked_data_collator)
     else:
-        trainer = PairwiseTrainer(model=model, args=training_args, train_dataset=train_dataset,
+        trainer = PairwiseTrainer(model=model, args=training_args, train_dataset=train_dataset, compute_metrics=compute_metrics,
              data_collator=pairwise_data_collator)
-    trainer.train()
+    # trainer.train()
 
     # NOTE: In order to run this install transformers from source
     # per https://github.com/huggingface/transformers/issues/20942

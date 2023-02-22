@@ -210,11 +210,17 @@ class RankedEvalDataset(Dataset):
 
 def pairwise_data_collator(data):
     if len(data[0]) == 4:
-        return {'input_ids': torch.cat([f[0] for f in data] + [f[2] for f in data]),
-                'attention_mask': torch.cat([f[1] for f in data] + [f[3] for f in data])}
+        return {
+            'input_ids': torch.cat([f[0] for f in data] + [f[2] for f in data]),
+            'attention_mask': torch.cat([f[1] for f in data] + [f[3] for f in data]),
+            'labels': torch.tensor([1] * len(data) + [0] * len(data))
+        }
     elif len(data[0]) == 2:
-        return {'input_ids': torch.cat([f[0] for f in data]),
-                'attention_mask': torch.cat([f[1] for f in data])}
+        return {
+            'input_ids': torch.cat([f[0] for f in data]),
+            'attention_mask': torch.cat([f[1] for f in data]),
+            'labels': torch.tensor([1] * len(data))
+            }
     else:
         raise ValueError("Invalid data format")
 
